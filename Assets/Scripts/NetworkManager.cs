@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Colyseus;
-using DefaultNamespace;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class NetworkManager : MonoBehaviour
 {
@@ -35,7 +35,17 @@ public class NetworkManager : MonoBehaviour
 
     private void Start()
     {
+        Initialize();
+    }
+
+    private void Initialize()
+    {
         Client = new ColyseusClient("ws://localhost:3000");
+    }
+    
+    public void Reinitialize()
+    {
+        Initialize();
     }
 
     public async Task<bool> ConnectToLobby(string playerId)
@@ -48,16 +58,20 @@ public class NetworkManager : MonoBehaviour
         try
         {
             Lobby = await Client.JoinOrCreate<LobbyState>("Lobby", options);
-            Lobby.OnStateChange += OnLobbyStateChange;
+            //Lobby.OnStateChange += OnLobbyStateChange;
             CurrentPlayerId = playerId; // 현재 플레이어 ID 저장
             Debug.Log($"Joined lobby with id: {playerId}");
 
             // Room 초기화 완료 이벤트 발생
             OnRoomInitialized?.Invoke();
 
-            Lobby.OnMessage<Dictionary<string, object>>("chat_room_created", OnChatRoomCreated);
+            Lobby.OnMessage<Dictionary<string, object>>("CHAT_ROOM_CREATED", OnChatRoomCreated);
             Lobby.OnMessage<Dictionary<string, object>>("error", OnError);
 
+            
+            // OnStateChange
+            Lobby.OnStateChange += LobbyHandler.OnStateChange;
+            
             return true;
         }
         catch (Exception e)
@@ -66,12 +80,15 @@ public class NetworkManager : MonoBehaviour
             return false;
         }
     }
-
+    
     private void OnChatRoomCreated(Dictionary<string, object> message)
     {
-        if (message.TryGetValue("chatRoomId", out object chatRoomId))
+        //Debug.Log("Received CHAT_ROOM_CREATED message: " + JsonUtility.ToJson(message));
+
+        if (message.TryGetValue("createdRoomId", out object createdRoomId))
         {
-            JoinChatRoom(chatRoomId.ToString());
+            //Debug.Log("Created Room ID: " + createdRoomId);
+            JoinChatRoom(createdRoomId.ToString());
         }
     }
 
@@ -87,41 +104,60 @@ public class NetworkManager : MonoBehaviour
     {
         var options = new Dictionary<string, object>
         {
-            { "id", CurrentPlayerId }
+            { "roomName", roomName },
+            { "roomOwner", CurrentPlayerId }
         };
+
+        //Debug.Log("Sending create chat room request with options: " + JsonUtility.ToJson(options));
 
         try
         {
-            await Lobby.Send("create_chat_room", options);
+            await Lobby.Send("CREATE_CHAT_ROOM", options);
             return true;
         }
         catch (Exception e)
         {
-            Debug.LogError("Failed to send create chat room message: " + e.Message);
+            //Debug.LogError("Failed to send create chat room message: " + e.Message);
             return false;
         }
     }
 
     public async void JoinChatRoom(string roomId)
     {
-        var options = new Dictionary<string, object>
+        Dictionary<string, object> roomOptions = new Dictionary<string, object>
         {
-            { "id", CurrentPlayerId }
+            ["id"] = CurrentPlayerId,
         };
 
         try
         {
-            ChatRoom = await Client.JoinById<ChatRoomState>(roomId, options);
-            Debug.Log($"Joined ChatRoom with id: {roomId}");
-            ChatRoom.OnStateChange += OnChatRoomStateChange;
+            ChatRoom = await Client.JoinById<ChatRoomState>(roomId, roomOptions);
+            if (ChatRoom != null)
+            {
+                SceneManager.LoadScene("ChatRoom");
+            }
+            else
+            {
+                Debug.LogError("ChatRoom is null after joining.");
+            }
         }
         catch (Exception e)
         {
             Debug.LogError("Failed to join chat room: " + e.Message);
+            Debug.LogError("Stack Trace: " + e.StackTrace);
+        }
+    }
+    
+    public void DisConnectChatRoom()
+    {
+        if (ChatRoom != null)
+        {
+            ChatRoom.Leave();
+            ChatRoom = null;
         }
     }
 
-    public void DisconnectFromRoom()
+    public void DisconnectAll()
     {
         if (Lobby != null)
         {
@@ -136,22 +172,7 @@ public class NetworkManager : MonoBehaviour
         }
 
         CurrentPlayerId = null; // 플레이어 ID 초기화
-        Debug.Log("Logged out");
+        //Debug.Log("Logged out");
     }
-
-    private void OnLobbyStateChange(LobbyState state, bool isFirstState)
-    {
-        foreach (Player player in state.players.Values)
-        {
-            Debug.Log($"Lobby - Player {player.id} has score {player.score}");
-        }
-    }
-
-    private void OnChatRoomStateChange(ChatRoomState state, bool isFirstState)
-    {
-        foreach (Player player in state.players.Values)
-        {
-            Debug.Log($"ChatRoom - Player {player.id} has score {player.score}");
-        }
-    }
+    
 }

@@ -17,6 +17,8 @@ public class LoginHandler : MonoBehaviour
 
     private void Awake()
     {
+        Application.runInBackground = true;
+        
         _buttons = new Dictionary<string, Button>();
         Button[] buttons = FindObjectsOfType<Button>();
         foreach (Button button in buttons)
@@ -53,7 +55,7 @@ public class LoginHandler : MonoBehaviour
 
     private void OnButtonClicked(string buttonName)
     {
-        Debug.Log(buttonName + " clicked!");
+        //Debug.Log(buttonName + " clicked!");
         switch (buttonName)
         {
             case "LoginBtn":
@@ -97,7 +99,7 @@ public class LoginHandler : MonoBehaviour
 
         if (success)
         {
-            Debug.Log("Successfully connected to the room");
+            //Debug.Log("Successfully connected to the room");
             // 로그인 버튼을 숨기고 로그아웃 버튼을 보이게 설정
             _loginBtn.gameObject.SetActive(false);
             _logoutBtn.gameObject.SetActive(true);
@@ -116,7 +118,7 @@ public class LoginHandler : MonoBehaviour
 
     private void HandleLogout()
     {
-        NetworkManager.Instance.DisconnectFromRoom();
+        NetworkManager.Instance.DisconnectAll();
 
         // 로그아웃 버튼을 숨기고 로그인 버튼을 보이게 설정
         _loginBtn.gameObject.SetActive(true);
@@ -128,7 +130,7 @@ public class LoginHandler : MonoBehaviour
     
     private void HandleQuit()
     {
-        Debug.Log("Quitting the game...");
+        //Debug.Log("Quitting the game...");
 
         #if UNITY_EDITOR
             EditorApplication.isPlaying = false;
