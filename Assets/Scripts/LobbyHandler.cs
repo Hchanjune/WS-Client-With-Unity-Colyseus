@@ -21,6 +21,37 @@ public class LobbyHandler : MonoBehaviour
     private Transform _chatRoomListScrollContent;
     private GameObject _chatRoomItemButtonPrefab;
 
+    private void InitializeUIElements()
+    {
+        // Btn
+        _logoutBtn = GameObject.Find("LogoutBtn")?.GetComponent<Button>();
+        _chatRoomCreateBtn = GameObject.Find("BtnChatRoomCreate")?.GetComponent<Button>();
+
+        if (_logoutBtn != null)
+            _logoutBtn.onClick.AddListener(LogOut);
+
+        if (_chatRoomCreateBtn != null)
+            _chatRoomCreateBtn.onClick.AddListener(CreateNewChatRoom);
+
+        // Text
+        _usernameText = GameObject.Find("TextUsername")?.GetComponent<TMP_Text>();
+        _currentSessionIdText = GameObject.Find("TextSessionID")?.GetComponent<TMP_Text>();
+        _currentUserCountText = GameObject.Find("TextCurrentUserCount")?.GetComponent<TMP_Text>();
+
+        if (_usernameText != null)
+            _usernameText.text = NetworkManager.Instance.CurrentPlayerId;
+
+        if (_currentSessionIdText != null)
+            _currentSessionIdText.text = NetworkManager.Instance.Lobby.SessionId;
+
+        // View
+        _chatRoomListScrollView = GameObject.Find("ChatRoomListScrollView");
+        _chatRoomListScrollContent = _chatRoomListScrollView?.transform.Find("Viewport/Content");
+
+        // Prefab
+        _chatRoomItemButtonPrefab = Resources.Load<GameObject>("ChatRoomItemButtonPrefab");
+    }
+    
     private void Awake()
     {
         if (_instance == null)
@@ -56,38 +87,7 @@ public class LobbyHandler : MonoBehaviour
             }
         }
     }
-
-    private void InitializeUIElements()
-    {
-        // Btn
-        _logoutBtn = GameObject.Find("LogoutBtn")?.GetComponent<Button>();
-        _chatRoomCreateBtn = GameObject.Find("BtnChatRoomCreate")?.GetComponent<Button>();
-
-        if (_logoutBtn != null)
-            _logoutBtn.onClick.AddListener(LogOut);
-
-        if (_chatRoomCreateBtn != null)
-            _chatRoomCreateBtn.onClick.AddListener(CreateNewChatRoom);
-
-        // Text
-        _usernameText = GameObject.Find("TextUsername")?.GetComponent<TMP_Text>();
-        _currentSessionIdText = GameObject.Find("TextSessionID")?.GetComponent<TMP_Text>();
-        _currentUserCountText = GameObject.Find("TextCurrentUserCount")?.GetComponent<TMP_Text>();
-
-        if (_usernameText != null)
-            _usernameText.text = NetworkManager.Instance.CurrentPlayerId;
-
-        if (_currentSessionIdText != null)
-            _currentSessionIdText.text = NetworkManager.Instance.Lobby.SessionId;
-
-        // View
-        _chatRoomListScrollView = GameObject.Find("ChatRoomListScrollView");
-        _chatRoomListScrollContent = _chatRoomListScrollView?.transform.Find("Viewport/Content");
-
-        // Prefab
-        _chatRoomItemButtonPrefab = Resources.Load<GameObject>("ChatRoomItemButtonPrefab");
-    }
-
+    
     private void OnDestroy()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
@@ -101,7 +101,7 @@ public class LobbyHandler : MonoBehaviour
 
     private async void CreateNewChatRoom()
     {
-        bool process = await NetworkManager.Instance.CreateChatRoom("New Chat Room");
+        bool process = await NetworkManager.Instance.CreateChatRoom($"{NetworkManager.Instance.CurrentPlayerId}'s Chat");
         if (process)
         {
             Debug.Log("ChatRoom Successfully Created");

@@ -135,6 +135,7 @@ public class NetworkManager : MonoBehaviour
             if (ChatRoom != null)
             {
                 SceneManager.LoadScene("ChatRoom");
+                ChatRoom.OnStateChange += ChatRoomHandler.OnStateChange;
             }
             else
             {
