@@ -29,9 +29,9 @@ public class LoginHandler : MonoBehaviour
 
         // InputField
         _usernameInput = GameObject.Find("InputUsername").GetComponent<TMP_InputField>();
-        _usernameInput.placeholder.GetComponent<TextMeshProUGUI>().text = "Username : ";
+        _usernameInput.placeholder.GetComponent<TextMeshProUGUI>().text = "Username";
         _passwordInput = GameObject.Find("InputPassword").GetComponent<TMP_InputField>();
-        _passwordInput.placeholder.GetComponent<TextMeshProUGUI>().text = "Password : ";
+        _passwordInput.placeholder.GetComponent<TextMeshProUGUI>().text = "Password";
         _passwordInput.contentType = TMP_InputField.ContentType.Password;
         
         // Buttons
