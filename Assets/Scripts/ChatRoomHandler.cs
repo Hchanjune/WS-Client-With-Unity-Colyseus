@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Colyseus.Schema;
 using TMPro;
@@ -25,6 +26,8 @@ public class ChatRoomHandler : MonoBehaviour
     private TMP_InputField _chattingTextInput;
     private Button _submitBtn;
 
+    private Button _readyBtn;
+
     private void InitializeUIElements()
     {
         // Btn
@@ -47,9 +50,14 @@ public class ChatRoomHandler : MonoBehaviour
         // Chatting Text Input
         _chattingTextInput = GameObject.Find("InputChatText").GetComponent<TMP_InputField>();
         _chattingTextInput.onSubmit.AddListener(SendChatMessage);
+        
         // SubmitBtn
         _submitBtn = GameObject.Find("BtnSubmitMessage").GetComponent<Button>();
         _submitBtn.onClick.AddListener(SendChatMessage);
+        
+        // ReadyBtn
+        _readyBtn = GameObject.Find("BtnReady").GetComponent<Button>();
+        _readyBtn.interactable = true;
     }
     
     private void Awake()
@@ -72,8 +80,10 @@ public class ChatRoomHandler : MonoBehaviour
         InitializeUIElements();
         if (NetworkManager.Instance.ChatRoom != null)
         {
+            NetworkManager.Instance.ChatRoom.OnMessage<Dictionary<string, object>>("START", OnStart);
             UpdateChatRoomState(NetworkManager.Instance.ChatRoom.State);
         }
+        
     }
     
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -96,16 +106,18 @@ public class ChatRoomHandler : MonoBehaviour
     private void UpdateChatRoomState(ChatRoomState state)
     {
         UpdateChatRoomInfo(state);
-        UpdateChatRoomUsers(state.players);
+        UpdateChatRoomUsers(state.chatRoomPlayers);
         NetworkManager.Instance.ChatRoom.OnMessage<Dictionary<string, object>>("CHAT_ECHO", OnReceivingMessage);
+        NetworkManager.Instance.ChatRoom.OnMessage<Dictionary<string, object>>("PLAYER_NOT_READY", OnPlayerNotReady);
     }
 
     private void UpdateChatRoomInfo(ChatRoomState state)
     {
         _chatRoomInfoText.text = $"[{state.roomOwner}] {state.roomName}";
     }
+    
 
-    private void UpdateChatRoomUsers(MapSchema<Player> players)
+    private void UpdateChatRoomUsers(MapSchema<ChatRoomPlayer> players)
     {
         if (_userAreaContent == null) return;
 
@@ -114,13 +126,42 @@ public class ChatRoomHandler : MonoBehaviour
             Destroy(child.gameObject);
         }
         
-        foreach (Player player in players.Values)
+        // Usernames
+        foreach (ChatRoomPlayer player in players.Values)
         {
-            GameObject chatRoomItem = Instantiate(_userTextPrefab, _userAreaContent);
-            TMP_Text chatRoomText = chatRoomItem.GetComponentInChildren<TMP_Text>();
-            chatRoomText.text = $"{player.id}";
+            GameObject chatRoomUserItem = Instantiate(_userTextPrefab, _userAreaContent);
+            TMP_Text chatRoomUserName = chatRoomUserItem.GetComponentInChildren<TMP_Text>();
+            if (player.isOwner)
+            {
+                chatRoomUserName.text = $"[Owner]{player.id}";
+                chatRoomUserName.color = Color.yellow;
+            }
+            else
+            {
+                chatRoomUserName.text = $"{player.id}";
+                chatRoomUserName.color = player.isReady ? Color.green : Color.blue;
+            }
+
+            if (player.id.Equals(NetworkManager.Instance.CurrentPlayerId))
+            {
+                ChatRoomPlayer currentPlayer = player;
+                // ReadyBtn
+                if (currentPlayer.isOwner)
+                {
+                    _readyBtn.GetComponentInChildren<TMP_Text>().text = "시작";
+                    _readyBtn.onClick.RemoveAllListeners();
+                    _readyBtn.onClick.AddListener(StartRequest);
+                    
+                }
+                else
+                {
+                    _readyBtn.GetComponentInChildren<TMP_Text>().text = currentPlayer.isReady ? "준비 취소" : "준비";
+                    _readyBtn.onClick.RemoveAllListeners();
+                    _readyBtn.onClick.AddListener(() => OnReady(currentPlayer.isReady));
+                }
+                _readyBtn.interactable = true;
+            }
         }
-        
     }
     
     private void OnExit()
@@ -128,6 +169,25 @@ public class ChatRoomHandler : MonoBehaviour
         NetworkManager.Instance.DisConnectChatRoom();
         SceneManager.LoadSceneAsync("Lobby");
         NetworkManager.Instance.Reinitialize();
+    }
+
+    private void OnReady(bool currentReadyState)
+    {
+        NetworkManager.Instance.ChatRoom.Send("PLAYER_READY_STATUS_CHANGE", new {
+            id = NetworkManager.Instance.CurrentPlayerId,
+            isReady = !currentReadyState
+        });
+    }
+
+    private void OnPlayerNotReady(Dictionary<string, object> message)
+    {
+        _readyBtn.interactable = true;
+    }
+
+    private void StartRequest()
+    {
+        NetworkManager.Instance.ChatRoom.Send("START_REQUEST");
+        _readyBtn.interactable = false;
     }
     
     
@@ -142,6 +202,8 @@ public class ChatRoomHandler : MonoBehaviour
             };
             NetworkManager.Instance.ChatRoom.Send("CHAT_MESSAGE" ,chatMessage);
             _chattingTextInput.text = ""; // Clear the input field after sending the message
+            _chattingTextInput.Select();
+            _chattingTextInput.ActivateInputField();
         }
     }
     
@@ -156,6 +218,8 @@ public class ChatRoomHandler : MonoBehaviour
             };
             NetworkManager.Instance.ChatRoom.Send("CHAT_MESSAGE", chatMessage);
             _chattingTextInput.text = ""; // Clear the input field after sending the message
+            _chattingTextInput.Select();
+            _chattingTextInput.ActivateInputField();
         }
     }
 
@@ -171,6 +235,24 @@ public class ChatRoomHandler : MonoBehaviour
         messenger.text = id + " : ";
         chatMessage.text = chat.ToString();
 
+        StartCoroutine(ScrollToBottom(_chatAreaScrollView.GetComponent<ScrollRect>()));
+    }
+
+    private void OnStart(Dictionary<string, object> message)
+    {
+        SceneManager.LoadScene("PlayGround");
+    }
+
+    private IEnumerator ScrollToBottom(ScrollRect scrollRect)
+    {
+        // Wait for the end of the frame to ensure the new message is added and the canvas is updated
+        yield return new WaitForEndOfFrame();
+        
+        // Force the canvas to update
+        Canvas.ForceUpdateCanvases();
+        
+        // Set the scroll position to the bottom
+        scrollRect.verticalNormalizedPosition = 0;
     }
     
     

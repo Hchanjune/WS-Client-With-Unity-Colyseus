@@ -544,8 +544,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: username
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: c2ef2f62f0766b642a285d8b14f5dd0b, type: 2}
+  m_sharedMaterial: {fileID: -5942420108038921591, guid: c2ef2f62f0766b642a285d8b14f5dd0b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1080,6 +1080,7 @@ GameObject:
   - component: {fileID: 712149224}
   - component: {fileID: 712149223}
   - component: {fileID: 712149222}
+  - component: {fileID: 712149225}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -1161,6 +1162,18 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &712149225
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 712149221}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22b9740ab88ad5d4c848e234aaf6b952, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &751504497
 GameObject:
   m_ObjectHideFlags: 0

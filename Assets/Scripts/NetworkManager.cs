@@ -40,7 +40,7 @@ public class NetworkManager : MonoBehaviour
 
     private void Initialize()
     {
-        Client = new ColyseusClient("ws://localhost:3000");
+        Client = new ColyseusClient("ws://sinandle.iptime.org:7532");
     }
     
     public void Reinitialize()
